@@ -1,0 +1,55 @@
+!pip install selenium
+
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+import time
+
+# CSV 파일 경로
+file_path = r"C:\Users\User\Downloads\untitled.csv"
+
+# CSV 파일 읽기
+data = pd.read_csv(file_path)
+
+# ChromeDriver 설정
+options = Options()
+options.add_argument('--headless')  # 브라우저를 표시하지 않음
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
+
+driver = webdriver.Chrome(options=options)
+
+# 결과 저장할 리스트
+results = []
+
+# URL 리스트 가져오기
+urls = data['제목_링크']
+
+for url in urls:
+    try:
+        # URL 열기
+        driver.get(url)
+        time.sleep(3)  # 페이지 로드 대기 (필요 시 조정)
+        
+        # 본문 데이터 추출
+        Text_posting = driver.find_elements(By.CSS_SELECTOR, ".se_doc_viewer.se_body_wrap.se_theme_default.se_pc")
+        for i in Text_posting:
+            posting = i.text
+            print(f"URL: {url}\nContent: {posting}\n")
+            results.append({"URL": url, "Content": posting})
+    except Exception as e:
+        print(f"Error processing {url}: {e}")
+        results.append({"URL": url, "Content": "Error occurred"})
+
+# 드라이버 닫기
+driver.quit()
+
+# 결과를 DataFrame으로 변환
+results_df = pd.DataFrame(results)
+
+# 결과 저장
+output_path = r"C:\Users\User\Downloads\extracted_content.csv"
+results_df.to_csv(output_path, index=False)
+print(f"Data extraction complete. Saved as '{output_path}'")
